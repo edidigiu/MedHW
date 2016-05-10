@@ -31,19 +31,6 @@ dir.create(path=paste(getwd(),"/Plots/",Sys.Date(),sep=""))
 ### INFO BASE  ##########################################
 #########################################################
 
-#Per aggiungere la mappa ITALIA sui grafici:
-italy.map <- maps::map("italy")
-italy.map.shp <-maptools::map2SpatialLines(italy.map)#, proj4string=projection(precsat.raster))
-italy<-maps::map("italy",fill=TRUE,col="transparent", plot=F)
-p4s<-CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-#SLitaly<-map2SpatialLines(italy,proj4string=p4s)     # se voglio LINEE con il dettaglio delle PROVINCE
-province<-italy$names
-SPitaly<-map2SpatialPolygons(italy,IDs= province,proj4string=p4s)
-IT<-gUnionCascaded(SPitaly, id = NULL)   #or aggregate(SPitaly)
-IT_utm<-spTransform(IT,CRS("+proj=utm"))
-IT_buff_utm<-gBuffer(IT_utm,width=20000)
-IT_buff<-spTransform(IT_buff_utm,p4s)
-
 #Per aggiungere la mappa WORLD sui grafici:
 world.map <- maps::map("world")
 world.map.shp <-maptools::map2SpatialLines(world.map)#, proj4string=projection(precsat.raster))
@@ -56,7 +43,6 @@ SPworld<-map2SpatialPolygons(world,IDs=countries,proj4string=p4s)
 # WORLD_utm<-spTransform(WORLD,CRS("+proj=utm"))
 # WORLD_buff_utm<-gBuffer(WORLD_utm,width=20000)
 # WORLD_buff<-spTransform(WORLD_buff_utm,p4s)
-
 
 
 for (variabile in c("tn","tx")){

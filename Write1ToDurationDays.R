@@ -14,8 +14,7 @@ library(raster)
 #############################
 
 ### Function for single cell:: 
-# x<-getValues(data.cropped)[5,]
-# x00<-x
+#x<-getValues(data.cropped)[4,]
 Put1_SingleCell<-function(x){
   x0<-x
   x<-na.omit(x)
@@ -62,12 +61,11 @@ for (var in c("tn","tx")){
   files.nobuoni<-files.dati[grep("M",files.dati)]
   
   #numero di aree:
-  n.areas<-1         #ceiling((length(files.dati)-length(files.nobuoni))/4)    #sia Duration che Begin, sia tx che tn
-  
+  n.areas<-1				#ceiling((length(files.dati)-length(files.nobuoni))/4)    #sia Duration che Begin, sia tx che tn
   
   for (i in 1:n.areas){    #ciclo sui files tagliati per aree e periodo
     
-    datax<-brick((paste("Data/",var,"_ECAD_Begin_HeatWave_Cut",i,".nc",sep="")))
+    datax<-brick((paste("Data/",var,"_ECAD_Duration_HeatWave_Cut",i,".nc",sep="")))
     timex<-getZ(datax)
     tutti1<-Put1_Raster(x=datax,filename=paste(getwd(),"/Data/",var,"_ECAD_Duration_HeatWave_Cut",i,"_Extended0.nc",sep=""))
     tutti1<-setZ(tutti1,timex)

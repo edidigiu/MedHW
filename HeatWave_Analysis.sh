@@ -22,38 +22,43 @@
 months="1,2,3,4,5,6,7,8,9,10,11,12"       
 
 #Input bounds box coordinates for interested area:
-Zone1="-14,24,30,50"     #Western+Central Med
+Zone1="-14,20,30,50"     #Western+Central Med
 
 for var in tx tn
 do
 	for i in Begin Duration 
-  do
+	do
 
-		index=1
+	index=1
 		for Zone in $Zone1 
 		do
   		#####
 		  # METTERE I FILES DENTRO la dir: Data
-      cdo selmon,$months -sellonlatbox,$Zone Data/"$var"_ECAD_"$i"_HeatWave3.nc Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc        
+      		cdo selmon,$months -sellonlatbox,$Zone Data/"$var"_ECAD_"$i"_HeatWave3.nc Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc        
 
-      if [ "$i" = "Duration" ] 
-      then
-         echo ".......R: crea file .nc con tutti 1"
-         /usr/bin/R --slave -f Write1ToDurationDays.R
-         echo ".......R: prodotto file .nc con tutti 1"
-         ## Reset of time axis in the output file *Extended.nc:
-         ncrename -O -v z,time -d z,time Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended0.nc Data/Appo.nc
-         cdo settaxis,1951-01-01,12:00:00,1day -setcalendar,standard -settunits,day Data/Appo.nc Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended.nc
-         
-         #Monthly averages:
-         cdo -O monmean -setctomiss,0 Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc Data/MM_"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc
-         cdo -O monmax  -setctomiss,0 Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc Data/MX_"$var"_ECAD_"$i"Max_HeatWave_Cut"$index".nc
-      else
-         cdo -O monsum -setctomiss,0 Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc Data/MM_"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc
-		  fi
+      		if [ "$i" = "Duration" ] 
+      		then
+         		echo ".......R: crea file .nc con tutti 1"
+         		/usr/bin/R --slave -f Write1ToDurationDays.R
+         		echo ".......R: prodotto file .nc con tutti 1"
+         		## Reset of time axis in the output file *Extended.nc:
+         		ncrename -O -v z,time -d z,time Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended0.nc Data/Appo.nc
+         		cdo settaxis,1951-01-01,12:00:00,1day -setcalendar,standard -settunits,day Data/Appo.nc Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended.nc
+	 		rm -f  Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended0.nc
+         		
+			#Marginal on space:
+			cdo fldsum Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended.nc Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended_Marginal.nc
+			cdo histsum,0,50,100,150,200,inf  Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended_Marginal.nc Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index"_Extended_Marginal_HistSum.nc
+         		
+			#Monthly averages:
+         		cdo -O monmean -setctomiss,0 Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc Data/MM_"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc
+         		cdo -O monmax  -setctomiss,0 Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc Data/MX_"$var"_ECAD_"$i"Max_HeatWave_Cut"$index".nc
+      		else
+         		cdo -O monsum -setctomiss,0 Data/"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc Data/MM_"$var"_ECAD_"$i"_HeatWave_Cut"$index".nc
+		fi
 
-		  index=$((index+1))       #incremento l'etichetta per il nome dei files
-		  done
+		index=$((index+1))       #incremento l'etichetta per il nome dei files
+		 done
                 
 	done
 done

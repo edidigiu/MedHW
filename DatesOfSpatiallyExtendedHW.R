@@ -10,24 +10,37 @@
 #------------------------------------------------------------------------------
 
 library(ncdf4)
+library(zoo)
 
 ### FUNCTIONs HUB         ###
 #############################
 # Function for relative maximum::
-derivative <- function(f, x, ..., order = 1, delta = 0.1, sig = 6) {
-  # Numerically computes the specified order derivative of f at x
-  vals <- matrix(NA, nrow = order + 1, ncol = order + 1)
-  grid <- seq(x - delta/2, x + delta/2, length.out = order + 1)
-  vals[1, ] <- sapply(grid, f, ...) - f(x, ...)
-  for (i in 2:(order + 1)) {
-    for (j in 1:(order - i + 2)) {
-      stepsize <- grid[i + j - 1] - grid[i + j - 2]
-      vals[i, j] <- (vals[i - 1, j + 1] - vals[i - 1, j])/stepsize
-    }
+## Vectors with maxima according to 2 time windows (7 and 10 days)
+## where a unique maximum is taken:::  
+##  x is a zoo time series:::
+RelMax<-function(x)  
+{
+  xx7<-x
+  x7<-rep(0,length(x))
+  xx10<-x
+  x10<-rep(0,length(x))
+  
+  for(i in 1:length(x))
+  {
+    #7 days:
+    x7[which.max(xx7)]<-max(xx7)
+    if(which.max(xx7)<=7){xx7[1:(which.max(xx7)+7)] <- 0}
+    if(which.max(xx7) >= (length(xx7)-7)){xx7[(which.max(xx7)-7):length(xx7)] <- 0}
+    if(which.max(xx7)>7 & which.max(xx7) < (length(xx7)-7)){xx7[(which.max(xx7)-7):(which.max(xx7)+7)] <-0}
+    #10 days:
+    x10[which.max(xx10)]<-max(xx10)
+    if(which.max(xx10)<=10){xx10[1:(which.max(xx10)+10)] <- 0}
+    if(which.max(xx10) >= (length(xx10)-10)){xx10[(which.max(xx10)-10):length(xx10)] <- 0}
+    if(which.max(xx10)>10 & which.max(xx10) < (length(xx10)-10)){xx10[(which.max(xx10)-10):(which.max(xx10)+10)] <-0}
   }
-  return(signif(vals[order + 1, 1], sig))
-}
-
+  df<-cbind(x,x7,x10)
+  return(df)
+}  # end function
 
 #------------------------------
 #numero di aree:
@@ -58,37 +71,87 @@ for (var in c("tn","tx")){
     # plot(Marginal.ts,col="red")
     # require(raster)
     # appo<-movingFun(Marginal.ts,n=10,fun=mean)
-    require(zoo)
+    
     MargZoo<-zoo(Marginal,seq(timedate,by="day",length.out=nt))
-    x<-rollmean(MargZoo,10)
-    plot(x) 
+    # x<-rollmean(MargZoo,10)
+    # plot(x) 
+    # 
+     
     
-    table(cut(x, quantile(x)))
+    # Apply function for Relative Maxima (and 3 threshold for small extended HW
+    ## +Table):
+    #---------------------
+    final<-RelMax(MargZoo)
+    plot(final,type="l")
     
-    RelMax<-function(x)
-    {
-      # x2<-rep(0,length(x))
-      # for(i in 1:length(x))
-      # {
-      #   x2[which.max(x)]<-1  
-      #   x[which.max(x)] <-0
-      #   
-      # }
-      xlag1<-diff(x,1)
-      tutti<-cbind(x,xlag1,xlag1/24)
-      daily<-expand.grid(x=x,y=rep(xlag1/24,each=24))
-      library(pspline)
-      time=time(x)
-      d1<-predict(sm.spline(time, x), time, 1)
-      d2<-predict(sm.spline(time, x), time, 2)
-      appo<-x[d1>-0.5 & d1<0.5 & d2<(-0.5)]
-      plot(appo)
-      abline(v=as.vector(time(appo)),col="lightgrey")
-       
-      
-      dx<-D(x~time,"x")
-      d1<-eval(dx)
-    }
+    ## thresholds for cutting:
+    #-------------------------
+    x7tab<-with(final,hist(x7, breaks=c(0,50,100,300,500,max(x7)), plot = FALSE))
+    x10tab<-with(final,hist(x10, breaks=c(0,50,100,300,500,max(x10)), plot = FALSE))
+    label0<-cbind(x7tab$breaks,c(x7tab$breaks[-1],NA))
+    label<-paste(label0[1:5,1],"-",label0[1:5,2],sep="")
+    tab<-rbind(x7tab$counts,x10tab$counts)
+    rownames(tab)<-c("7daysCut","10daysCut")
+    colnames(tab)<-label
+    
+    #Only May-Sept:
+    Xdates<-time(final)
+    Xmonths<-months.Date(dates,abbreviate = T)
+    Xindex<-Xmonths=="Mag"| Xmonths=="Giu" | Xmonths=="Lug" | Xmonths=="Ago" | Xmonths=="Set"  
+    
+    finalMaySept<-window(final,index. = Xdates[Xindex])
+    plot(finalMaySept)
+    abline(v=which(finalMaySept$x10>=1000),col="red")
+    summary(finalMaySept)
+    
+    x7tab<-with(finalMaySept,hist(x7, breaks=c(0,50,100,300,500,max(x7)), plot = FALSE))
+    x10tab<-with(finalMaySept,hist(x10, breaks=c(0,50,100,300,500,max(x10)), plot = FALSE))
+    label0<-cbind(x7tab$breaks,c(x7tab$breaks[-1],NA))
+    label<-paste(label0[1:5,1],"-",label0[1:5,2],sep="")
+    tabMaySept<-rbind(x7tab$counts,x10tab$counts)
+    rownames(tabMaySept)<-c("7daysCut","10daysCut")
+    colnames(tabMaySept)<-label
+    
     
    }
 }
+
+
+# Prove funzione:
+
+# xlag1<-diff(x,1)
+# tutti<-as.matrix(cbind(x,xlag1,xlag1/24))
+# #hourly sequence:
+# y<-rep(NA,24)
+# for (i in 2:(length(x)-1)) {   
+#   hours24<-cumsum(c(tutti[i,1],rep(tutti[(i+1),3],each=23)))
+#   y<-c(y,hours24)
+# }
+# y<-c(y,rep(tutti[i,1],24))
+# 
+# h<-seq.POSIXt(from = as.POSIXct("1951-01-01 00:00:00", "%Y-%m-%d %H:%M:%S", tz = ""), by = "hour",length.out=nt*24)
+# 
+# y.zoo<-zoo(y,h)
+# time=time(y.zoo)
+# 
+# library(pspline)
+# # prova<-sm.spline(time, y.zoo)
+# timecut=time[1:300]
+# y.zoocut=y.zoo[1:300]
+# d1<-predict(sm.spline(timecut, y.zoocut), timecut, 1)
+# # d2<-predict(sm.spline(time, x), time, 2)
+# appo<-x[d1>-0.5 & d1<0.5 & d2<(-0.5)]
+# plot(appo)
+# abline(v=as.vector(time(appo)),col="lightgrey")
+# 
+# require(raster)
+# appo<-movingFun(y.zoo,n=10,fun=mean)
+# 
+# dx<-D(expression(x),"x")
+# d1<-eval(dx,list(x=appo))
+# plot(attr(d1,"gradient"))
+# 
+# require(numDeriv)
+# funct1<-function(x){x=x}
+# curve(funct1,from=0,to=5)
+# d1<-grad(func=funct1,x=appo[1:200],method="simple")

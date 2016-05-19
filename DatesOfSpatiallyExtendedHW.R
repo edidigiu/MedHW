@@ -51,7 +51,7 @@ for (var in c("tn","tx")){
   for (i in 1:n.areas){    #ciclo sui files tagliati per aree e periodo
     
     #Extracting data from NetCDF file:
-    NC<-nc_open(paste("Data/",var,"_ECAD_Duration_HeatWave_Cut",i,"_Extended_Marginal.nc",sep=""))
+    NC<-nc_open(paste(getwd(),"/Data/",var,"_ECAD_Duration_HeatWave_Cut",i,"_Extended_Marginal.nc",sep=""))
     print(paste("The file has",NC$nvars,"variables"))
     v1 <- NC$var[[1]]
     (varsize <- v1$varsize)
@@ -96,12 +96,13 @@ for (var in c("tn","tx")){
     
     #Only May-Sept:
     Xdates<-time(final)
-    Xmonths<-months.Date(dates,abbreviate = T)
+    Xmonths<-months.Date(Xdates,abbreviate = T)
     Xindex<-Xmonths=="Mag"| Xmonths=="Giu" | Xmonths=="Lug" | Xmonths=="Ago" | Xmonths=="Set"  
     
     finalMaySept<-window(final,index. = Xdates[Xindex])
     plot(finalMaySept)
-    abline(v=which(finalMaySept$x10>=1000),col="red")
+    abline(v=as.numeric(time(finalMaySept[finalMaySept$x10>=1000,])),col="red")
+
     summary(finalMaySept)
     
     x7tab<-with(finalMaySept,hist(x7, breaks=c(0,50,100,300,500,max(x7)), plot = FALSE))
@@ -112,9 +113,47 @@ for (var in c("tn","tx")){
     rownames(tabMaySept)<-c("7daysCut","10daysCut")
     colnames(tabMaySept)<-label
     
+    assign(paste(var,"_Area",i,"_final",sep=""),value = final)
+    assign(paste(var,"_Area",i,"_tab",sep=""),tab)
+    write.table(cbind(rownames(as.matrix(final)),as.matrix(final)),
+                file = paste("Output/",var,"_Area",i,"_final.txt",sep=""),
+                row.names = FALSE,sep=",")
+    
+    ## CREATE NETCDF OF COMPLETE TABLE DATA ####
+    # 
+    # # Create dimensions lon, lat, level and time
+    # dim_lon <- ncdim_def( "longitude", "degrees_east", seq(9.5, 14, by=0.1), create_dimvar=TRUE)
+    # dim_lat <- ncdim_def( "latitude", "degrees_north", seq(41,45,by=0.1), create_dimvar=TRUE)
+    dim_time<- ncdim_def( "time", units="days since 1951-01-01",vals=1:nrow(final), unlim=TRUE)  #units="30 minutes",
+    #mv <- NA 
+    # 
+    # # Create a new variable "cells", create netcdf file, put updated
+    # # contents on it and close file    
+    var1_out <- ncvar_def("cells","number",  dim=list(dim_time), prec="integer",longname="Time series of #Cells hit by HW")
+    var2_out <- ncvar_def("cellsX7","number",  dim=list(dim_time), prec="integer",longname="Time series of #Cells hit by HW assuming (-7,+7) days of separation")
+    var3_out <- ncvar_def("cellsX10","number",  dim=list(dim_time), prec="integer",longname="Time series of #Cells hit by HW assuming (-10,+10) days of separation")
+    ncid_out<- nc_create(paste(var,"_Area",i,"_HW_spatial_extension.nc",sep=""), vars=list(var1_out,var2_out,var3_out))
+    ncvar_put(ncid_out, varid=var1_out, vals=final$x, start=c(1), count=c(nrow(final)))                                                                
+    ncvar_put(ncid_out, varid=var2_out, vals=final$x7, start=c(1), count=c(nrow(final)))                                                             
+    ncvar_put(ncid_out, varid=var3_out, vals=final$x10, start=c(1), count=c(nrow(final)))  
+    nc_close(ncid_out)
+    ## 
+    
+    #Save same objects for May-Sept::
+    assign(paste(var,"_Area",i,"_finalMaySept",sep=""),value = finalMaySept)
+    assign(paste(var,"_Area",i,"_tabMaySept",sep=""),tabMaySept)
+    write.table(cbind(rownames(as.matrix(finalMaySept)),as.matrix(finalMaySept)),
+                file = paste("Output/",var,"_Area",i,"_finalMaySept.txt",sep=""),
+                row.names = FALSE,sep=",")
     
    }
 }
+
+
+# Save some objects for report::
+save("HW_SpatialExtension.RData",
+     list=c("tx_Area1_final","tx_Area1_finalMaySept","tx_Area1_tab","tx_Area1_tabMaySept",
+            "tn_Area1_final","tn_Area1_finalMaySept","tn_Area1_tab","tn_Area1_tabMaySept"))
 
 
 # Prove funzione:

@@ -151,9 +151,9 @@ for (var in c("tn","tx")){
 
 
 # Save some objects for report::
-save("HW_SpatialExtension.RData",
-     list=c("tx_Area1_final","tx_Area1_finalMaySept","tx_Area1_tab","tx_Area1_tabMaySept",
-            "tn_Area1_final","tn_Area1_finalMaySept","tn_Area1_tab","tn_Area1_tabMaySept"))
+save(list=c("tx_Area1_final","tx_Area1_finalMaySept","tx_Area1_tab","tx_Area1_tabMaySept",
+            "tn_Area1_final","tn_Area1_finalMaySept","tn_Area1_tab","tn_Area1_tabMaySept"),
+          file="HW_SpatialExtension.RData")
 
 
 # Prove funzione:

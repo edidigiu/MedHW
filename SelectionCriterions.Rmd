@@ -1,0 +1,62 @@
+---
+title: "HW dates selection"
+author: "E. Di Giuseppe"
+date: "19 maggio 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##  IDENTIFICATION OF HEAT WAVES DATES AT LARGE SPATIAL DOMAIN      
+
+1) starts from `t?_ECAD_Duration_HeatWave_Cut1_Extended_Marginal.nc files;
+2) identifies the whole relative maximum and their dates;
+3) creates output files (ASCII and NetCDF)
+*******
+The data listed below can be loaded into R from the following file:
+
+```{r List,include=FALSE}
+library(ncdf4)
+library(zoo)
+```
+```{r  RData}
+load("HW_SpatialExtension.RData")
+ls()
+```
+
+The objects `tn_Area1_final` and `tx_Area1_final` have been also created both as *.txt* and *.nc* files. These files are loaded in the [GitHub repository](https://github.com/edidigiu/MedHW.git).
+
+
+The  `tn_Area1_final` and `tx_Area1_final` are multiple time series. The table below is an example of HW events selection for **tn**:
+
+```{r Data Explanation,echo=FALSE}
+tn_Area1_final[19140:19200]
+```
+
+where the column `x` represents the number of cells in the domain area (Central-Western Mediterranean basin) which have been hit by an HW; the column `x7` is built searching iteratively the maximum number of cells once the nearest $7$ time points $(-7days; +7days)$ are set to $0$; and the column `x10` is similar to `x7` except for the time window which is $(-10days; +10days)$.
+
+The results of setting different time windows is reported in the following tables, where the reported **HW events** are also tabulated according to classes of cells number involved in each event:
+
+```{r TableFinal}
+tn_Area1_tab
+tx_Area1_tab
+```
+
+
+The same tables for the period May-September are reported below:
+
+```{r TableFinalMaySept}
+tn_Area1_tabMaySept
+tx_Area1_tabMaySept
+```
+
+
+## CONCLUSIONS
+
+The 10-days time window tends to leave out several important events. On the other hand, the 7-days time window
+may split a unique HW event into two. However, it is worth noticing that, for the period May-September, the number of events selected by the two type of time windows above the threshold of $300$ cells is very similar and the total number of  **tn**(**tx**) HW events sum up to $152$($137$)  and $137$($122$) for 7-days and 10-days, respectively. __My proposal is to take $300$ as minimum number of cells involved (spatial extension of the HW) and 7-days time window for cutting out dates of the same HW__.
+
+
+
